@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>YouTube Meown!</title>
+    <title>YouTube Meown !</title>
     <link rel="stylesheet" href="/style.css">
   </head>
   <body>
@@ -49,8 +49,7 @@
                 allowfullscreen
               ></iframe>
             <% } %>
-            <button onclick="makeFullScreen('iframe-<%= idx %>')" style="position:absolute;top:10px;right:110px;z-index:2;">Fullscreen</button>
-            <button onclick="exitFullScreen()" style="position:absolute;top:10px;right:10px;z-index:2;">Exit Fullscreen</button>
+            <button onclick="makeFullScreen('iframe-<%= idx %>')" style="position:absolute;top:10px;right:10px;z-index:2;">Fullscreen</button>
           </div>
           <p style="font-weight: bold; margin-top: 8px;"><%= v.title %></p>
         </div>
@@ -81,19 +80,6 @@
           requestFullScreen.call(iframe);
         } else {
           alert('Fullscreen not supported in this browser.');
-        }
-      }
-
-      function exitFullScreen() {
-        const exit =
-          document.exitFullscreen ||
-          document.mozCancelFullScreen ||
-          document.webkitExitFullscreen ||
-          document.msExitFullscreen;
-        if (exit) {
-          exit.call(document);
-        } else {
-          alert('Exit fullscreen not supported in this browser.');
         }
       }
     </script>
