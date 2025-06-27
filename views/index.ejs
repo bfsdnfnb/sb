@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>YouTube Meown !</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header>
+      <h1>YouTube Meown!</h1>
+    </header>
+    <div class="container">
+      <% if (message) { %>
+        <div class="message-box">
+          <strong>Vikas Message:</strong>
+          <p><%= message.content %></p>
+        </div>
+      <% } %>
+
+      <% if (success && success.length) { %>
+        <div class="message-box" style="background:#d1fae5; border-left:5px solid #10b981; color:#065f46;">
+          <%= success[0] %>
+        </div>
+      <% } %>
+      <% if (error && error.length) { %>
+        <div class="message-box" style="background:#fee2e2; border-left:5px solid #ef4444; color:#991b1b;">
+          <%= error[0] %>
+        </div>
+      <% } %>
+
+      <% videos.forEach(v => { %>
+        <div style="margin-bottom: 30px;">
+          <% if (v.type === 'video') { %>
+            <iframe
+              width="560"
+              height="315"
+              src="https://www.youtube.com/embed/<%= v.youtubeId %>?rel=0"
+              allowfullscreen
+            ></iframe>
+          <% } else { %>
+            <iframe
+              width="560"
+              height="315"
+              src="https://www.youtube.com/embed/videoseries?list=<%= v.youtubeId %>&rel=0"
+              allowfullscreen
+            ></iframe>
+          <% } %>
+          <p style="font-weight: bold; margin-top: 8px;"><%= v.title %></p>
+        </div>
+      <% }) %>
+
+      <div style="text-align:center; margin-top:20px;">
+        <% if (totalPages > 1) { %>
+          <% for (let i = 1; i <= totalPages; i++) { %>
+            <% if (i === page) { %>
+              <span style="font-weight:bold; color:#4f8cff; margin:0 5px;"><%= i %></span>
+            <% } else { %>
+              <a href="/?page=<%= i %>" style="margin:0 5px; color:#22223b;"><%= i %></a>
+            <% } %>
+          <% } %>
+        <% } %>
+      </div>
+    </div>
+  </body>
+</html>
