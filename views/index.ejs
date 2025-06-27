@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>YouTube Meown!</title>
+    <title>YouTube Meown !</title>
     <link rel="stylesheet" href="/style.css">
   </head>
   <body>
@@ -27,27 +27,28 @@
         </div>
       <% } %>
 
-      <% videos.forEach(v => { %>
+      <% videos.forEach((v, idx) => { %>
         <div style="margin-bottom: 30px;">
-          <% if (v.type === 'video') { %>
-            <iframe
-              width="560"
-              height="315"
-              src="https://www.youtube-nocookie.com/embed/<%= v.youtubeId %>?rel=0&modestbranding=1"
-              frameborder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowfullscreen
-            ></iframe>
-          <% } else { %>
-            <iframe
-              width="560"
-              height="315"
-              src="https://www.youtube-nocookie.com/embed/videoseries?list=<%= v.youtubeId %>&rel=0&modestbranding=1"
-              frameborder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowfullscreen
-            ></iframe>
-          <% } %>
+          <div style="position:relative;">
+            <% if (v.type === 'video') { %>
+              <iframe
+                id="iframe-<%= idx %>"
+                width="560"
+                height="315"
+                src="https://www.youtube-nocookie.com/embed/<%= v.youtubeId %>?rel=0"
+                allowfullscreen
+              ></iframe>
+            <% } else { %>
+              <iframe
+                id="iframe-<%= idx %>"
+                width="560"
+                height="315"
+                src="https://www.youtube-nocookie.com/embed/videoseries?list=<%= v.youtubeId %>&rel=0"
+                allowfullscreen
+              ></iframe>
+            <% } %>
+            <button onclick="makeFullScreen('iframe-<%= idx %>')" style="position:absolute;top:10px;right:10px;z-index:2;">Fullscreen</button>
+          </div>
           <p style="font-weight: bold; margin-top: 8px;"><%= v.title %></p>
         </div>
       <% }) %>
