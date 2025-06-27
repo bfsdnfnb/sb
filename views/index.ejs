@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>YouTube Meown !</title>
+    <title>YouTube Meown!</title>
     <link rel="stylesheet" href="/style.css">
   </head>
   <body>
@@ -49,29 +49,10 @@
                 allowfullscreen
               ></iframe>
             <% } %>
-            <button onclick="makeFullScreen('iframe-<%= idx %>')" style="position:absolute;top:10px;right:90px;z-index:2;">Fullscreen</button>
+            <button onclick="makeFullScreen('iframe-<%= idx %>')" style="position:absolute;top:10px;right:110px;z-index:2;">Fullscreen</button>
             <button onclick="exitFullScreen()" style="position:absolute;top:10px;right:10px;z-index:2;">Exit Fullscreen</button>
           </div>
           <p style="font-weight: bold; margin-top: 8px;"><%= v.title %></p>
-
-          <!-- Comments Section -->
-          <div style="margin-top:10px;">
-            <form method="POST" action="/comment/<%= v.youtubeId %>">
-              <input type="text" name="name" placeholder="Your name (optional)" style="width:200px;display:inline-block;">
-              <input type="text" name="text" placeholder="Add a comment..." required style="width:300px;display:inline-block;">
-              <input type="submit" value="Comment">
-            </form>
-            <div style="margin-top:10px;">
-              <% if (comments && comments[v.youtubeId]) { %>
-                <% comments[v.youtubeId].forEach(c => { %>
-                  <div style="background:#f1f3f8; border-radius:5px; margin-bottom:5px; padding:5px 10px;">
-                    <strong><%= c.name %></strong>: <%= c.text %>
-                    <span style="color:#888; font-size:0.9em;">(<%= c.createdAt.toLocaleString() %>)</span>
-                  </div>
-                <% }) %>
-              <% } %>
-            </div>
-          </div>
         </div>
       <% }) %>
 
@@ -90,29 +71,29 @@
 
     <script>
       function makeFullScreen(id) {
-        var iframe = document.getElementById(id);
-        if (iframe.requestFullscreen) {
-          iframe.requestFullscreen();
-        } else if (iframe.mozRequestFullScreen) {
-          iframe.mozRequestFullScreen();
-        } else if (iframe.webkitRequestFullscreen) {
-          iframe.webkitRequestFullscreen();
-        } else if (iframe.msRequestFullscreen) {
-          iframe.msRequestFullscreen();
+        const iframe = document.getElementById(id);
+        const requestFullScreen =
+          iframe.requestFullscreen ||
+          iframe.mozRequestFullScreen ||
+          iframe.webkitRequestFullscreen ||
+          iframe.msRequestFullscreen;
+        if (requestFullScreen) {
+          requestFullScreen.call(iframe);
         } else {
           alert('Fullscreen not supported in this browser.');
         }
       }
 
       function exitFullScreen() {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        } else if (document.mozCancelFullScreen) {
-          document.mozCancelFullScreen();
-        } else if (document.webkitExitFullscreen) {
-          document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-          document.msExitFullscreen();
+        const exit =
+          document.exitFullscreen ||
+          document.mozCancelFullScreen ||
+          document.webkitExitFullscreen ||
+          document.msExitFullscreen;
+        if (exit) {
+          exit.call(document);
+        } else {
+          alert('Exit fullscreen not supported in this browser.');
         }
       }
     </script>
