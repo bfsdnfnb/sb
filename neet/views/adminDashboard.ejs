@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>Welcome, Admin</h1>
+  </header>
+  <div class="container">
+    <% if (success && success.length) { %>
+      <div class="message-box" style="background:#d1fae5; border-left:5px solid #10b981; color:#065f46;">
+        <%= success[0] %>
+      </div> 
+    <% } %>
+    <% if (error && error.length) { %>
+      <div class="message-box" style="background:#fee2e2; border-left:5px solid #ef4444; color:#991b1b;">
+        <%= error[0] %>
+      </div>
+    <% } %>
+    <h2>Update Message for Users</h2>
+    <form method="POST" action="/admin/update-message">
+      <textarea name="content" rows="4" placeholder="Enter message for users"><%= message ? message.content : '' %></textarea>
+      <input type="submit" value="Update Message">
+    </form>
+
+    <hr/>
+
+    <h2>Add New Video or Playlist</h2>
+    <form method="POST" action="/admin/add">
+      <input type="text" name="title" placeholder="Title" required />
+      <input type="text" name="youtubeUrl" placeholder="Full YouTube video or playlist URL" required />
+      <select name="type">
+        <option value="video">Video</option>
+        <option value="playlist">Playlist</option>
+      </select>
+      <label for="scheduledStartDate">Scheduled Start Date & Time (optional):</label>
+      <input type="datetime-local" name="scheduledStartDate" id="scheduledStartDate" />
+      <label for="expiryDate">Expiry Date & Time (optional):</label>
+      <input type="datetime-local" name="expiryDate" id="expiryDate" />
+      <input type="submit" value="Add">
+    </form>
+
+    <hr/>
+
+    <h2>Existing Videos/Playlists</h2>
+    <ul>
+      <% videos.forEach(v => { %>
+        <li>
+          <span><strong><%= v.title %></strong> - <%= v.type %></span>
+          <% if (v.scheduledStartDate) { %>
+            <span style="color: #4f8cff; font-size: 0.9em;">
+              | Start: <%= new Date(v.scheduledStartDate).toLocaleString() %>
+            </span>
+          <% } %>
+          <% if (v.expiryDate) { %>
+            <span style="color: #ff6b6b; font-size: 0.9em;">
+              | Expires: <%= new Date(v.expiryDate).toLocaleString() %>
+            </span>
+          <% } %>
+          <form method="POST" action="/admin/delete/<%= v._id %>" style="display:inline;">
+            <button type="submit">Delete</button>
+          </form>
+        </li>
+      <% }) %>
+    </ul>
+  </div>
+</body>
+</html>

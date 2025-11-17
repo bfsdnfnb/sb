@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>YouTube Meown !</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header>
+      <h1>YouTube Meown!</h1>
+    </header>
+    <div class="container">
+      <% if (message) { %>
+        <div class="message-box">
+          <strong>Vikas Message:</strong>
+          <p><%= message.content %></p>
+        </div>
+      <% } %>
+
+      <% if (success && success.length) { %>
+        <div class="message-box" style="background:#d1fae5; border-left:5px solid #10b981; color:#065f46;">
+          <%= success[0] %>
+        </div>
+      <% } %>
+      <% if (error && error.length) { %>
+        <div class="message-box" style="background:#fee2e2; border-left:5px solid #ef4444; color:#991b1b;">
+          <%= error[0] %>
+        </div>
+      <% } %>
+
+      <% videos.forEach((v, idx) => { %>
+        <div style="margin-bottom: 30px;">
+          <div style="position:relative;">
+            <% if (v.type === 'video') { %>
+              <iframe
+                id="iframe-<%= idx %>"
+                width="560"
+                height="315"
+                src="https://www.youtube-nocookie.com/embed/<%= v.youtubeId %>?rel=0"
+                allow="fullscreen"
+                allowfullscreen
+              ></iframe>
+            <% } else { %>
+              <iframe
+                id="iframe-<%= idx %>"
+                width="560"
+                height="315"
+                src="https://www.youtube-nocookie.com/embed/videoseries?list=<%= v.youtubeId %>&rel=0"
+                allow="fullscreen"
+                allowfullscreen
+              ></iframe>
+            <% } %>
+            <button onclick="makeFullScreen('iframe-<%= idx %>')" style="position:absolute;top:10px;right:10px;z-index:2;">Fullscreen</button>
+          </div>
+          <p style="font-weight: bold; margin-top: 8px;"><%= v.title %></p>
+        </div>
+      <% }) %>
+
+      <div style="text-align:center; margin-top:20px;">
+        <% if (totalPages > 1) { %>
+          <% for (let i = 1; i <= totalPages; i++) { %>
+            <% if (i === page) { %>
+              <span style="font-weight:bold; color:#4f8cff; margin:0 5px;"><%= i %></span>
+            <% } else { %>
+              <a href="/?page=<%= i %>" style="margin:0 5px; color:#22223b;"><%= i %></a>
+            <% } %>
+          <% } %>
+        <% } %>
+      </div>
+    </div>
+
+    <script>
+      function makeFullScreen(id) {
+        const iframe = document.getElementById(id);
+        const requestFullScreen =
+          iframe.requestFullscreen ||
+          iframe.mozRequestFullScreen ||
+          iframe.webkitRequestFullscreen ||
+          iframe.msRequestFullscreen;
+        if (requestFullScreen) {
+          requestFullScreen.call(iframe);
+        } else {
+          alert('Fullscreen not supported in this browser.');
+        }
+      }
+    </script>
+  </body>
+</html>
+ 
