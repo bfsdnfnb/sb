@@ -19,6 +19,18 @@
         <%= error[0] %>
       </div>
     <% } %>
+    <h2>Settings</h2>
+    <form method="POST" action="/admin/update-title-prefix">
+      <label for="titlePrefix">Default Title Prefix:</label>
+      <input type="text" name="titlePrefix" id="titlePrefix" value="<%= settings.defaultTitlePrefix %>" placeholder="e.g., Video, Lecture, Class" required />
+      <small style="display: block; color: #666; margin-bottom: 10px;">
+        Next video will be: "<%= settings.defaultTitlePrefix %> <%= settings.lastVideoNumber + 1 %>"
+      </small>
+      <input type="submit" value="Update Prefix">
+    </form>
+
+    <hr/>
+
     <h2>Update Message for Users</h2>
     <form method="POST" action="/admin/update-message">
       <textarea name="content" rows="4" placeholder="Enter message for users"><%= message ? message.content : '' %></textarea>
@@ -41,6 +53,30 @@
       <input type="datetime-local" name="expiryDate" id="expiryDate" />
       <input type="submit" value="Add">
     </form>
+
+    <hr/>
+
+    <h2>Existing Videos/Playlists</h2>
+    <ul>
+      <% videos.forEach(v => { %>
+        <li>
+          <span><strong><%= v.title %></strong> - <%= v.type %></span>
+          <% if (v.scheduledStartDate) { %>
+            <span style="color: #4f8cff; font-size: 0.9em;">
+              | Start: <%= new Date(v.scheduledStartDate).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) %>
+            </span>
+          <% } %>
+          <% if (v.expiryDate) { %>
+            <span style="color: #ff6b6b; font-size: 0.9em;">
+              | Expires: <%= new Date(v.expiryDate).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) %>
+            </span>
+          <% } %>
+          <form method="POST" action="/admin/delete/<%= v._id %>" style="display:inline;">
+            <button type="submit">Delete</button>
+          </form>
+        </li>
+      <% }) %>
+    </ul>
 
     <hr/>
 
@@ -101,30 +137,53 @@
         </tbody>
       </table>
     </div>
-
-    <hr/>
-
-    <h2>Existing Videos/Playlists</h2>
-    <ul>
-      <% videos.forEach(v => { %>
-        <li>
-          <span><strong><%= v.title %></strong> - <%= v.type %></span>
-          <% if (v.scheduledStartDate) { %>
-            <span style="color: #4f8cff; font-size: 0.9em;">
-              | Start: <%= new Date(v.scheduledStartDate).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) %>
-            </span>
-          <% } %>
-          <% if (v.expiryDate) { %>
-            <span style="color: #ff6b6b; font-size: 0.9em;">
-              | Expires: <%= new Date(v.expiryDate).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) %>
-            </span>
-          <% } %>
-          <form method="POST" action="/admin/delete/<%= v._id %>" style="display:inline;">
-            <button type="submit">Delete</button>
-          </form>
-        </li>
-      <% }) %>
-    </ul>
   </div>
+  <script>
+    // Set default dates and times
+    window.addEventListener('DOMContentLoaded', function() {
+      const startInput = document.getElementById('scheduledStartDate');
+      const expiryInput = document.getElementById('expiryDate');
+      const titleInput = document.querySelector('input[name="title"]');
+      
+      // Get today's date
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      
+      // Set default times: 18:30 for start, 20:30 for expiry
+      const defaultStartTime = `${year}-${month}-${day}T18:30`;
+      const defaultExpiryTime = `${year}-${month}-${day}T20:30`;
+      
+      startInput.value = defaultStartTime;
+      expiryInput.value = defaultExpiryTime;
+      
+      // Set default title
+      const titlePrefix = '<%= settings.defaultTitlePrefix %>';
+      const nextNumber = <%= settings.lastVideoNumber + 1 %>;
+      titleInput.value = `${titlePrefix} ${nextNumber}`;
+    });
+    
+    // When form is submitted, ensure datetime-local values are correctly interpreted
+    document.querySelector('form[action="/admin/add"]').addEventListener('submit', function(e) {
+      const startInput = document.getElementById('scheduledStartDate');
+      const expiryInput = document.getElementById('expiryDate');
+      
+      // datetime-local gives us local time, but we need to store it as UTC in the database
+      // The browser automatically handles this when we send the ISO string to the server
+      
+      // Optional: Add validation
+      if (startInput.value && expiryInput.value) {
+        const startDate = new Date(startInput.value);
+        const expiryDate = new Date(expiryInput.value);
+        
+        if (expiryDate <= startDate) {
+          alert('Expiry date must be after the scheduled start date!');
+          e.preventDefault();
+          return false;
+        }
+      }
+    });
+  </script>
 </body>
 </html>

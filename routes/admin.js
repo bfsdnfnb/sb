@@ -4,6 +4,7 @@ const router = express.Router();
 const Video = require("../models/Video");
 const Message = require('../models/Message');
 const UserVisit = require('../models/UserVisit');
+const Settings = require('../models/Settings');
 
 
 // Middleware
@@ -38,12 +39,30 @@ router.get('/dashboard', isAdmin, async (req, res) => {
   const videos = await Video.find();
   const message = await Message.findOne();
   const userVisits = await UserVisit.find().sort({ lastVisit: -1 }).limit(50);
-  res.render('adminDashboard', { videos, message, userVisits });
+  let settings = await Settings.findOne();
+  if (!settings) {
+    settings = await Settings.create({ defaultTitlePrefix: 'Video', lastVideoNumber: 0 });
+  }
+  res.render('adminDashboard', { videos, message, userVisits, settings });
 });
 
 
 router.post("/add", isAdmin, async (req, res) => {
-  const { youtubeUrl, type, title, scheduledStartDate, expiryDate } = req.body; // Get scheduling fields
+  let { youtubeUrl, type, title, scheduledStartDate, expiryDate } = req.body; // Get scheduling fields
+  
+  // Get settings and auto-increment title if using default
+  let settings = await Settings.findOne();
+  if (!settings) {
+    settings = await Settings.create({ defaultTitlePrefix: 'Video', lastVideoNumber: 0 });
+  }
+  
+  // If title matches the pattern (prefix + number), auto-increment
+  const titlePattern = new RegExp(`^${settings.defaultTitlePrefix} (\\d+)$`);
+  if (titlePattern.test(title)) {
+    settings.lastVideoNumber += 1;
+    title = `${settings.defaultTitlePrefix} ${settings.lastVideoNumber}`;
+    await settings.save();
+  }
 
   let youtubeId = null;
   if (type === "video") {
@@ -64,10 +83,19 @@ router.post("/add", isAdmin, async (req, res) => {
   // Build video object with optional scheduling dates
   const videoData = { title, youtubeId, type };
   if (scheduledStartDate && scheduledStartDate.trim() !== '') {
+    // datetime-local input provides time in format: "YYYY-MM-DDTHH:mm"
+    // When we create a Date object, it interprets this as local time (IST in your case)
+    // and stores it as UTC in MongoDB, which is what we want
     videoData.scheduledStartDate = new Date(scheduledStartDate);
+    console.log('Scheduled Start Date (IST input):', scheduledStartDate);
+    console.log('Stored as UTC:', videoData.scheduledStartDate.toISOString());
+    console.log('Will display as IST:', videoData.scheduledStartDate.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
   }
   if (expiryDate && expiryDate.trim() !== '') {
     videoData.expiryDate = new Date(expiryDate);
+    console.log('Expiry Date (IST input):', expiryDate);
+    console.log('Stored as UTC:', videoData.expiryDate.toISOString());
+    console.log('Will display as IST:', videoData.expiryDate.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
   }
   
   await Video.create(videoData);
@@ -92,6 +120,19 @@ router.post('/update-message', isAdmin, async (req, res) => {
     await Message.create({ content });
   }
   req.flash('success', 'Message updated!');
+  res.redirect('/admin/dashboard');
+});
+
+router.post('/update-title-prefix', isAdmin, async (req, res) => {
+  const { titlePrefix } = req.body;
+  let settings = await Settings.findOne();
+  if (settings) {
+    settings.defaultTitlePrefix = titlePrefix || 'Video';
+    await settings.save();
+  } else {
+    await Settings.create({ defaultTitlePrefix: titlePrefix || 'Video', lastVideoNumber: 0 });
+  }
+  req.flash('success', 'Default title prefix updated!');
   res.redirect('/admin/dashboard');
 }); 
 
