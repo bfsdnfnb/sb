@@ -41,7 +41,7 @@ router.get('/dashboard', isAdmin, async (req, res) => {
 
 
 router.post("/add", isAdmin, async (req, res) => {
-  const { youtubeUrl, type, title } = req.body; // Get title from form
+  const { youtubeUrl, type, title, scheduledStartDate, expiryDate } = req.body; // Get scheduling fields
 
   let youtubeId = null;
   if (type === "video") {
@@ -58,7 +58,13 @@ router.post("/add", isAdmin, async (req, res) => {
     req.flash('error', 'Invalid YouTube URL.');
     return res.redirect("/admin/dashboard");
   }
-  await Video.create({ title, youtubeId, type }); // Save title
+  
+  // Build video object with optional scheduling dates
+  const videoData = { title, youtubeId, type };
+  if (scheduledStartDate) videoData.scheduledStartDate = new Date(scheduledStartDate);
+  if (expiryDate) videoData.expiryDate = new Date(expiryDate);
+  
+  await Video.create(videoData);
   req.flash('success', 'Video/Playlist added!');
   res.redirect("/admin/dashboard");
 });
@@ -81,6 +87,6 @@ router.post('/update-message', isAdmin, async (req, res) => {
   }
   req.flash('success', 'Message updated!');
   res.redirect('/admin/dashboard');
-});
+}); 
 
 module.exports = router;

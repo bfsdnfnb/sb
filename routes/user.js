@@ -7,18 +7,27 @@ const ytpl = require('ytpl');
 router.get('/', async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = 5;
-  const skip = (page - 1) * limit;
-  const total = await Video.countDocuments();
-  const videosRaw = await Video.find().sort({ addedAt: -1 }).skip(skip).limit(limit);
+  const now = new Date();
+
+  // Fetch all videos and playlists
+  const videosRaw = await Video.find().sort({ addedAt: -1 });
   const message = await Message.findOne();
-  const totalPages = Math.ceil(total / limit);
+
+  // Filter videos based on scheduled and expiry dates
+  const visibleVideos = videosRaw.filter(v => {
+    // Check if video has started (scheduledStartDate is null or in the past)
+    const hasStarted = !v.scheduledStartDate || v.scheduledStartDate <= now;
+    // Check if video hasn't expired (expiryDate is null or in the future)
+    const notExpired = !v.expiryDate || v.expiryDate > now;
+    return hasStarted && notExpired;
+  });
 
   // Expand playlists into their videos
   let videos = [];
-  for (const v of videosRaw) {
+  for (const v of visibleVideos) {
     if (v.type === 'playlist') {
       try {
-        const playlist = await ytpl(v.youtubeId, { pages: 1 });
+        const playlist = await ytpl(v.youtubeId, { pages: Infinity });
         playlist.items.forEach(item => {
           videos.push({
             type: 'video',
@@ -27,7 +36,6 @@ router.get('/', async (req, res) => {
           });
         });
       } catch (e) {
-        // If playlist fetch fails, show as playlist
         videos.push(v);
       }
     } else {
@@ -35,7 +43,12 @@ router.get('/', async (req, res) => {
     }
   }
 
-  res.render('index', { videos, message, page, totalPages });
+  // Paginate the expanded videos array
+  const total = videos.length;
+  const totalPages = Math.ceil(total / limit);
+  const paginatedVideos = videos.slice((page - 1) * limit, page * limit);
+
+  res.render('index', { videos: paginatedVideos, message, page, totalPages });
 });
 
 module.exports = router;

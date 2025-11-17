@@ -12,7 +12,7 @@
     <% if (success && success.length) { %>
       <div class="message-box" style="background:#d1fae5; border-left:5px solid #10b981; color:#065f46;">
         <%= success[0] %>
-      </div>
+      </div> 
     <% } %>
     <% if (error && error.length) { %>
       <div class="message-box" style="background:#fee2e2; border-left:5px solid #ef4444; color:#991b1b;">
@@ -35,6 +35,10 @@
         <option value="video">Video</option>
         <option value="playlist">Playlist</option>
       </select>
+      <label for="scheduledStartDate">Scheduled Start Date & Time (optional):</label>
+      <input type="datetime-local" name="scheduledStartDate" id="scheduledStartDate" />
+      <label for="expiryDate">Expiry Date & Time (optional):</label>
+      <input type="datetime-local" name="expiryDate" id="expiryDate" />
       <input type="submit" value="Add">
     </form>
 
@@ -45,6 +49,16 @@
       <% videos.forEach(v => { %>
         <li>
           <span><strong><%= v.title %></strong> - <%= v.type %></span>
+          <% if (v.scheduledStartDate) { %>
+            <span style="color: #4f8cff; font-size: 0.9em;">
+              | Start: <%= new Date(v.scheduledStartDate).toLocaleString() %>
+            </span>
+          <% } %>
+          <% if (v.expiryDate) { %>
+            <span style="color: #ff6b6b; font-size: 0.9em;">
+              | Expires: <%= new Date(v.expiryDate).toLocaleString() %>
+            </span>
+          <% } %>
           <form method="POST" action="/admin/delete/<%= v._id %>" style="display:inline;">
             <button type="submit">Delete</button>
           </form>
