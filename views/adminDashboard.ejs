@@ -44,6 +44,66 @@
 
     <hr/>
 
+    <h2>User Visit Statistics</h2>
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <thead>
+          <tr style="background: #f0f0f0;">
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">IP Address</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Last Visit</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Total Time Spent</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Visit Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (userVisits && userVisits.length > 0) { %>
+            <% userVisits.forEach(visit => { %>
+              <tr>
+                <td style="border: 1px solid #ddd; padding: 8px;"><%= visit.ipAddress %></td>
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                  <%= new Date(visit.lastVisit).toLocaleString() %>
+                  <% 
+                    const now = new Date();
+                    const lastVisit = new Date(visit.lastVisit);
+                    const diffMs = now - lastVisit;
+                    const diffMins = Math.floor(diffMs / 60000);
+                    const diffHours = Math.floor(diffMins / 60);
+                    const diffDays = Math.floor(diffHours / 24);
+                    let timeAgo = '';
+                    if (diffDays > 0) timeAgo = `(${diffDays}d ago)`;
+                    else if (diffHours > 0) timeAgo = `(${diffHours}h ago)`;
+                    else if (diffMins > 0) timeAgo = `(${diffMins}m ago)`;
+                    else timeAgo = '(just now)';
+                  %>
+                  <span style="color: #666; font-size: 0.85em;"><%= timeAgo %></span>
+                </td>
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                  <% 
+                    const totalSeconds = visit.totalTimeSpent || 0;
+                    const hours = Math.floor(totalSeconds / 3600);
+                    const minutes = Math.floor((totalSeconds % 3600) / 60);
+                    const seconds = totalSeconds % 60;
+                    let timeStr = '';
+                    if (hours > 0) timeStr += `${hours}h `;
+                    if (minutes > 0 || hours > 0) timeStr += `${minutes}m `;
+                    timeStr += `${seconds}s`;
+                  %>
+                  <%= timeStr %>
+                </td>
+                <td style="border: 1px solid #ddd; padding: 8px;"><%= visit.visitCount %></td>
+              </tr>
+            <% }) %>
+          <% } else { %>
+            <tr>
+              <td colspan="4" style="border: 1px solid #ddd; padding: 8px; text-align: center;">No visits recorded yet</td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+
+    <hr/>
+
     <h2>Existing Videos/Playlists</h2>
     <ul>
       <% videos.forEach(v => { %>

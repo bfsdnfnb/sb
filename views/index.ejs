@@ -82,6 +82,57 @@
           alert('Fullscreen not supported in this browser.');
         }
       }
+
+      // Track time spent on website
+      let startTime = Date.now();
+      let lastUpdate = startTime;
+
+      // Send time update every 30 seconds
+      setInterval(() => {
+        const now = Date.now();
+        const elapsed = Math.floor((now - lastUpdate) / 1000); // seconds since last update
+        lastUpdate = now;
+
+        if (elapsed > 0) {
+          fetch('/track-time', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ timeSpent: elapsed })
+          }).catch(err => console.error('Error tracking time:', err));
+        }
+      }, 30000); // Every 30 seconds
+
+      // Send final update when user leaves
+      window.addEventListener('beforeunload', () => {
+        const now = Date.now();
+        const elapsed = Math.floor((now - lastUpdate) / 1000);
+        if (elapsed > 0) {
+          navigator.sendBeacon('/track-time', JSON.stringify({ timeSpent: elapsed }));
+        }
+      });
+
+      // Track when user returns after being away (e.g., switched tabs)
+      document.addEventListener('visibilitychange', () => {
+        const now = Date.now();
+        if (document.hidden) {
+          // User left - update time
+          const elapsed = Math.floor((now - lastUpdate) / 1000);
+          if (elapsed > 0) {
+            fetch('/track-time', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ timeSpent: elapsed })
+            }).catch(err => console.error('Error tracking time:', err));
+          }
+        } else {
+          // User returned - reset timer
+          lastUpdate = Date.now();
+        }
+      });
     </script>
   </body>
 </html>

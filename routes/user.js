@@ -2,12 +2,31 @@ const express = require('express');
 const router = express.Router();
 const Video = require('../models/Video');
 const Message = require('../models/Message');
+const UserVisit = require('../models/UserVisit');
 const ytpl = require('ytpl');
 
 router.get('/', async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = 5;
   const now = new Date();
+
+  // Track user visit
+  const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  const userAgent = req.headers['user-agent'] || 'unknown';
+  
+  try {
+    await UserVisit.findOneAndUpdate(
+      { ipAddress },
+      { 
+        $set: { lastVisit: now, userAgent },
+        $inc: { visitCount: 1 },
+        $setOnInsert: { firstVisit: now }
+      },
+      { upsert: true, new: true }
+    );
+  } catch (err) {
+    console.error('Error tracking visit:', err);
+  }
 
   // Fetch all videos and playlists
   const videosRaw = await Video.find().sort({ addedAt: -1 });
@@ -49,6 +68,23 @@ router.get('/', async (req, res) => {
   const paginatedVideos = videos.slice((page - 1) * limit, page * limit);
 
   res.render('index', { videos: paginatedVideos, message, page, totalPages });
+});
+
+// Track time spent - endpoint to receive heartbeat updates
+router.post('/track-time', async (req, res) => {
+  const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  const { timeSpent } = req.body; // time in seconds
+  
+  try {
+    await UserVisit.findOneAndUpdate(
+      { ipAddress },
+      { $inc: { totalTimeSpent: parseInt(timeSpent) || 0 } }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error updating time:', err);
+    res.json({ success: false });
+  }
 });
 
 module.exports = router;

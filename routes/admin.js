@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const router = express.Router();
 const Video = require("../models/Video");
 const Message = require('../models/Message');
+const UserVisit = require('../models/UserVisit');
 
 
 // Middleware
@@ -36,7 +37,8 @@ router.post("/login", async (req, res) => {
 router.get('/dashboard', isAdmin, async (req, res) => {
   const videos = await Video.find();
   const message = await Message.findOne();
-  res.render('adminDashboard', { videos, message });
+  const userVisits = await UserVisit.find().sort({ lastVisit: -1 }).limit(50);
+  res.render('adminDashboard', { videos, message, userVisits });
 });
 
 

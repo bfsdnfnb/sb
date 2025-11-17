@@ -13,6 +13,7 @@ mongoose.connect(process.env.MONGO_URI);
 
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json()); // Add JSON body parser for tracking endpoint
 app.use(express.static(path.join(__dirname, 'public')));
  
 app.use(session({
