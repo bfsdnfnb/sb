@@ -61,7 +61,7 @@
               <tr>
                 <td style="border: 1px solid #ddd; padding: 8px;"><%= visit.ipAddress %></td>
                 <td style="border: 1px solid #ddd; padding: 8px;">
-                  <%= new Date(visit.lastVisit).toLocaleString() %>
+                  <%= new Date(visit.lastVisit).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) %>
                   <% 
                     const now = new Date();
                     const lastVisit = new Date(visit.lastVisit);
@@ -111,12 +111,12 @@
           <span><strong><%= v.title %></strong> - <%= v.type %></span>
           <% if (v.scheduledStartDate) { %>
             <span style="color: #4f8cff; font-size: 0.9em;">
-              | Start: <%= new Date(v.scheduledStartDate).toLocaleString() %>
+              | Start: <%= new Date(v.scheduledStartDate).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) %>
             </span>
           <% } %>
           <% if (v.expiryDate) { %>
             <span style="color: #ff6b6b; font-size: 0.9em;">
-              | Expires: <%= new Date(v.expiryDate).toLocaleString() %>
+              | Expires: <%= new Date(v.expiryDate).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) %>
             </span>
           <% } %>
           <form method="POST" action="/admin/delete/<%= v._id %>" style="display:inline;">

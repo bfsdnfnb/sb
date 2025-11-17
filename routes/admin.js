@@ -63,8 +63,12 @@ router.post("/add", isAdmin, async (req, res) => {
   
   // Build video object with optional scheduling dates
   const videoData = { title, youtubeId, type };
-  if (scheduledStartDate) videoData.scheduledStartDate = new Date(scheduledStartDate);
-  if (expiryDate) videoData.expiryDate = new Date(expiryDate);
+  if (scheduledStartDate && scheduledStartDate.trim() !== '') {
+    videoData.scheduledStartDate = new Date(scheduledStartDate);
+  }
+  if (expiryDate && expiryDate.trim() !== '') {
+    videoData.expiryDate = new Date(expiryDate);
+  }
   
   await Video.create(videoData);
   req.flash('success', 'Video/Playlist added!');

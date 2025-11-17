@@ -38,6 +38,16 @@ router.get('/', async (req, res) => {
     const hasStarted = !v.scheduledStartDate || v.scheduledStartDate <= now;
     // Check if video hasn't expired (expiryDate is null or in the future)
     const notExpired = !v.expiryDate || v.expiryDate > now;
+    
+    // Debug logging
+    if (v.scheduledStartDate || v.expiryDate) {
+      console.log(`Video: ${v.title}`);
+      console.log(`  Current time: ${now.toISOString()}`);
+      if (v.scheduledStartDate) console.log(`  Scheduled: ${v.scheduledStartDate.toISOString()} - Has started: ${hasStarted}`);
+      if (v.expiryDate) console.log(`  Expires: ${v.expiryDate.toISOString()} - Not expired: ${notExpired}`);
+      console.log(`  Visible: ${hasStarted && notExpired}`);
+    }
+    
     return hasStarted && notExpired;
   });
 
