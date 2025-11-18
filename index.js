@@ -33,6 +33,6 @@ app.use((req, res, next) => {
 app.use('/', require('./routes/user'));
 app.use('/admin', require('./routes/admin'));
 
-app.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
+app.listen(5000, () => {
+  console.log('Server running on http://localhost:5000');
 });

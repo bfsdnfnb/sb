@@ -7,6 +7,7 @@
 <body>
   <header>
     <h1>Welcome, Admin</h1>
+    <div id="currentDateTime" style="font-size: 1rem; color: #666; margin-top: 8px;"></div>
   </header>
   <div class="container">
     <% if (success && success.length) { %>
@@ -21,12 +22,12 @@
     <% } %>
     <h2>Settings</h2>
     <form method="POST" action="/admin/update-title-prefix">
-      <label for="titlePrefix">Default Title Prefix:</label>
-      <input type="text" name="titlePrefix" id="titlePrefix" value="<%= settings.defaultTitlePrefix %>" placeholder="e.g., Video, Lecture, Class" required />
+      <label for="titlePrefix">Starting Number for Auto-Title:</label>
+      <input type="number" name="titlePrefix" id="titlePrefix" value="<%= settings.defaultTitlePrefix %>" placeholder="e.g., 3000" required />
       <small style="display: block; color: #666; margin-bottom: 10px;">
-        Next video will be: "<%= settings.defaultTitlePrefix %> <%= settings.lastVideoNumber + 1 %>"
+        Next video will be titled: "<%= settings.lastVideoNumber + 1 %>"
       </small>
-      <input type="submit" value="Update Prefix">
+      <input type="submit" value="Update Number">
     </form>
 
     <hr/>
@@ -47,10 +48,14 @@
         <option value="video">Video</option>
         <option value="playlist">Playlist</option>
       </select>
-      <label for="scheduledStartDate">Scheduled Start Date & Time (optional):</label>
-      <input type="datetime-local" name="scheduledStartDate" id="scheduledStartDate" />
-      <label for="expiryDate">Expiry Date & Time (optional):</label>
-      <input type="datetime-local" name="expiryDate" id="expiryDate" />
+      <label for="scheduledStartDate">Scheduled Start Date & Time (IST):</label>
+      <input type="datetime-local" id="scheduledStartDate" required />
+      <input type="hidden" name="scheduledStartDate" id="scheduledStartDateISO" />
+      
+      <label for="expiryDate">Expiry Date & Time (IST):</label>
+      <input type="datetime-local" id="expiryDate" required />
+      <input type="hidden" name="expiryDate" id="expiryDateISO" />
+      
       <input type="submit" value="Add">
     </form>
 
@@ -139,50 +144,139 @@
     </div>
   </div>
   <script>
-    // Set default dates and times
-    window.addEventListener('DOMContentLoaded', function() {
+    // Helpers: treat datetime-local value as IST wall-clock and convert to UTC ISO
+    function toISOFromISTLocal(value) {
+      if (!value) return null;
+      const parts = value.split('T');
+      if (parts.length !== 2) return null;
+      const [datePart, timePart] = parts;
+      const [y, m, d] = datePart.split('-').map(Number);
+      const [hh, mm] = timePart.split(':').map(Number);
+
+      // IST offset from UTC is +5.5 hours
+      const istOffsetMs = 5.5 * 3600000;
+
+      // Compute UTC ms corresponding to that IST wall-clock
+      // Date.UTC treats the components as UTC; subtract IST offset to get true UTC moment
+      const utcMs = Date.UTC(y, m - 1, d, hh, mm) - istOffsetMs;
+      return new Date(utcMs).toISOString();
+    }
+
+    // Get today's date components in IST
+    function getTodayISTDateParts() {
+      const now = new Date();
+      const utcMs = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const istMs = utcMs + (5.5 * 3600000);
+      const ist = new Date(istMs);
+      return {
+        year: ist.getUTCFullYear(),
+        month: String(ist.getUTCMonth() + 1).padStart(2, '0'),
+        day: String(ist.getUTCDate()).padStart(2, '0')
+      };
+    }
+
+    // Update current IST date/time display
+    function updateClock() {
+      const now = new Date();
+      const istTime = now.toLocaleString('en-IN', { 
+        timeZone: 'Asia/Kolkata',
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+      document.getElementById('currentDateTime').textContent = `Current IST: ${istTime}`;
+    }
+
+    // Before submit, convert datetime-local values (interpreted as IST) into UTC ISO strings
+    document.addEventListener('DOMContentLoaded', function() {
+      const addForm = document.querySelector('form[action="/admin/add"]');
+      if (addForm) {
+        addForm.addEventListener('submit', function(e) {
+          try {
+            const startInput = document.getElementById('scheduledStartDate');
+            const expiryInput = document.getElementById('expiryDate');
+            const startISOInput = document.getElementById('scheduledStartDateISO');
+            const expiryISOInput = document.getElementById('expiryDateISO');
+
+            console.log('Form submitting...');
+            console.log('Start IST value:', startInput ? startInput.value : 'NOT FOUND');
+            console.log('Expiry IST value:', expiryInput ? expiryInput.value : 'NOT FOUND');
+
+            if (!startInput || !startInput.value || startInput.value.trim() === '') {
+              alert('Scheduled start date is required!');
+              e.preventDefault();
+              return false;
+            }
+
+            if (!expiryInput || !expiryInput.value || expiryInput.value.trim() === '') {
+              alert('Expiry date is required!');
+              e.preventDefault();
+              return false;
+            }
+
+            // Convert to ISO and store in hidden fields
+            const startISO = toISOFromISTLocal(startInput.value);
+            const expiryISO = toISOFromISTLocal(expiryInput.value);
+
+            if (!startISO || !expiryISO) {
+              alert('Invalid date format! Please check your dates.');
+              console.error('Conversion failed:', { start: startInput.value, expiry: expiryInput.value });
+              e.preventDefault();
+              return false;
+            }
+
+            console.log('Converted start to UTC:', startISO);
+            console.log('Converted expiry to UTC:', expiryISO);
+
+            // Validate expiry > start
+            const s = new Date(startISO);
+            const ex = new Date(expiryISO);
+            if (ex <= s) {
+              alert('Expiry date must be after the scheduled start date!');
+              e.preventDefault();
+              return false;
+            }
+
+            // Set hidden fields with ISO values
+            startISOInput.value = startISO;
+            expiryISOInput.value = expiryISO;
+
+            console.log('Form validation passed, submitting with ISO values...');
+            return true;
+          } catch (error) {
+            console.error('Error in form submission:', error);
+            alert('Error processing dates: ' + error.message);
+            e.preventDefault();
+            return false;
+          }
+        });
+      } else {
+        console.error('Add form not found!');
+      }
+
+      // Set defaults after form listener is attached
       const startInput = document.getElementById('scheduledStartDate');
       const expiryInput = document.getElementById('expiryDate');
       const titleInput = document.querySelector('input[name="title"]');
-      
-      // Get today's date
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
-      
-      // Set default times: 18:30 for start, 20:30 for expiry
+
+      const { year, month, day } = getTodayISTDateParts();
       const defaultStartTime = `${year}-${month}-${day}T18:30`;
       const defaultExpiryTime = `${year}-${month}-${day}T20:30`;
-      
-      startInput.value = defaultStartTime;
-      expiryInput.value = defaultExpiryTime;
-      
-      // Set default title
-      const titlePrefix = '<%= settings.defaultTitlePrefix %>';
+
+      if (startInput && !startInput.value) startInput.value = defaultStartTime;
+      if (expiryInput && !expiryInput.value) expiryInput.value = defaultExpiryTime;
+
       const nextNumber = <%= settings.lastVideoNumber + 1 %>;
-      titleInput.value = `${titlePrefix} ${nextNumber}`;
-    });
-    
-    // When form is submitted, ensure datetime-local values are correctly interpreted
-    document.querySelector('form[action="/admin/add"]').addEventListener('submit', function(e) {
-      const startInput = document.getElementById('scheduledStartDate');
-      const expiryInput = document.getElementById('expiryDate');
-      
-      // datetime-local gives us local time, but we need to store it as UTC in the database
-      // The browser automatically handles this when we send the ISO string to the server
-      
-      // Optional: Add validation
-      if (startInput.value && expiryInput.value) {
-        const startDate = new Date(startInput.value);
-        const expiryDate = new Date(expiryInput.value);
-        
-        if (expiryDate <= startDate) {
-          alert('Expiry date must be after the scheduled start date!');
-          e.preventDefault();
-          return false;
-        }
-      }
+      if (titleInput && !titleInput.value) titleInput.value = String(nextNumber);
+
+      // Start clock
+      updateClock();
+      setInterval(updateClock, 1000); // Update every second
     });
   </script>
 </body>

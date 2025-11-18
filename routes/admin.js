@@ -53,14 +53,14 @@ router.post("/add", isAdmin, async (req, res) => {
   // Get settings and auto-increment title if using default
   let settings = await Settings.findOne();
   if (!settings) {
-    settings = await Settings.create({ defaultTitlePrefix: 'Video', lastVideoNumber: 0 });
+    settings = await Settings.create({ defaultTitlePrefix: '3000', lastVideoNumber: 3000 });
   }
   
-  // If title matches the pattern (prefix + number), auto-increment
-  const titlePattern = new RegExp(`^${settings.defaultTitlePrefix} (\\d+)$`);
-  if (titlePattern.test(title)) {
+  // If title is a number matching the expected next value, auto-increment
+  const expectedTitle = String(settings.lastVideoNumber + 1);
+  if (title.trim() === expectedTitle) {
     settings.lastVideoNumber += 1;
-    title = `${settings.defaultTitlePrefix} ${settings.lastVideoNumber}`;
+    title = String(settings.lastVideoNumber);
     await settings.save();
   }
 
@@ -80,22 +80,33 @@ router.post("/add", isAdmin, async (req, res) => {
     return res.redirect("/admin/dashboard");
   }
   
-  // Build video object with optional scheduling dates
+  // Build video object with scheduling dates (now required)
   const videoData = { title, youtubeId, type };
+  
+  // Client sends UTC ISO string (e.g., "2025-11-18T13:00:00.000Z" for IST 18:30)
+  // new Date() correctly parses ISO and stores as Date in MongoDB (UTC internally)
   if (scheduledStartDate && scheduledStartDate.trim() !== '') {
-    // datetime-local input provides time in format: "YYYY-MM-DDTHH:mm"
-    // When we create a Date object, it interprets this as local time (IST in your case)
-    // and stores it as UTC in MongoDB, which is what we want
     videoData.scheduledStartDate = new Date(scheduledStartDate);
-    console.log('Scheduled Start Date (IST input):', scheduledStartDate);
-    console.log('Stored as UTC:', videoData.scheduledStartDate.toISOString());
-    console.log('Will display as IST:', videoData.scheduledStartDate.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
+    console.log('Scheduled Start saved:', videoData.scheduledStartDate.toISOString(), 
+                '(IST:', videoData.scheduledStartDate.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }), ')');
+  } else {
+    req.flash('error', 'Scheduled start date is required.');
+    return res.redirect("/admin/dashboard");
   }
+  
   if (expiryDate && expiryDate.trim() !== '') {
     videoData.expiryDate = new Date(expiryDate);
-    console.log('Expiry Date (IST input):', expiryDate);
-    console.log('Stored as UTC:', videoData.expiryDate.toISOString());
-    console.log('Will display as IST:', videoData.expiryDate.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
+    console.log('Expiry saved:', videoData.expiryDate.toISOString(),
+                '(IST:', videoData.expiryDate.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }), ')');
+  } else {
+    req.flash('error', 'Expiry date is required.');
+    return res.redirect("/admin/dashboard");
+  }
+  
+  // Validate expiry is after start
+  if (videoData.expiryDate <= videoData.scheduledStartDate) {
+    req.flash('error', 'Expiry date must be after scheduled start date.');
+    return res.redirect("/admin/dashboard");
   }
   
   await Video.create(videoData);
@@ -125,14 +136,16 @@ router.post('/update-message', isAdmin, async (req, res) => {
 
 router.post('/update-title-prefix', isAdmin, async (req, res) => {
   const { titlePrefix } = req.body;
+  const startNumber = parseInt(titlePrefix) || 3000;
   let settings = await Settings.findOne();
   if (settings) {
-    settings.defaultTitlePrefix = titlePrefix || 'Video';
+    settings.defaultTitlePrefix = String(startNumber);
+    settings.lastVideoNumber = startNumber;
     await settings.save();
   } else {
-    await Settings.create({ defaultTitlePrefix: titlePrefix || 'Video', lastVideoNumber: 0 });
+    await Settings.create({ defaultTitlePrefix: String(startNumber), lastVideoNumber: startNumber });
   }
-  req.flash('success', 'Default title prefix updated!');
+  req.flash('success', 'Starting number updated!');
   res.redirect('/admin/dashboard');
 }); 
 
